@@ -20,6 +20,10 @@ struct ItemDetailView: View {
     @State private var salePriceText = ""
     @State private var marketplace = ""
 
+    // Dates (local state; saved on Save)
+    @State private var addedAt: Date = Date()          // NEW
+    @State private var soldAt: Date? = nil             // NEW
+
     // Local “sold” switch so nothing is persisted until Save
     @State private var soldSwitch = false
 
@@ -33,6 +37,14 @@ struct ItemDetailView: View {
 
     @State private var showSaleReceiptPicker = false
     @State private var saleReceiptSelection: PhotosPickerItem?
+
+    // Binding to edit optional soldAt in a DatePicker
+    private var soldDateBinding: Binding<Date> {        // NEW
+        Binding(
+            get: { soldAt ?? Date() },
+            set: { soldAt = $0 }
+        )
+    }
 
     var body: some View {
         Form {
@@ -54,6 +66,11 @@ struct ItemDetailView: View {
                 TextField("Name", text: $name)
                 TextField("Brand", text: $brand)
                 TextField("Category", text: $category)
+            }
+
+            // NEW: Dates section with editable Date Added
+            Section(header: Text("Dates")) {             // NEW
+                DatePicker("Date Added", selection: $addedAt, displayedComponents: [.date])
             }
 
             Section(header: Text("Purchase")) {
@@ -102,6 +119,11 @@ struct ItemDetailView: View {
 
                 TextField("Marketplace (eBay, StockX…)", text: $marketplace)
                     .disabled(!soldSwitch)
+
+                // NEW: Show a Date Sold picker only when sold is ON
+                if soldSwitch {                            // NEW
+                    DatePicker("Date Sold", selection: soldDateBinding, displayedComponents: [.date])
+                }
 
                 // Sale receipt UI (only when sold is ON)
                 if soldSwitch {
@@ -164,6 +186,9 @@ struct ItemDetailView: View {
                 salePriceText   = ""
                 marketplace     = ""
                 saleReceiptData = nil
+                soldAt          = nil            // NEW: clear sold date when unselling
+            } else if soldAt == nil {
+                soldAt = Date()                  // NEW: default sold date to today when toggled on
             }
         }
         // Pickers as modifiers (keeps the type-checker happy)
@@ -201,7 +226,7 @@ struct ItemDetailView: View {
         salePriceText = item.salePrice == 0 ? "" : String(format: "%.2f", item.salePrice)
         marketplace   = item.marketplace ?? ""
 
-        // ✅ Safe KVC reads (won't crash if the accessors aren't present yet)
+        // ✅ Safe KVC reads
         if item.entity.attributesByName["purchaseReceipt"] != nil {
             purchaseReceiptData = item.value(forKey: "purchaseReceipt") as? Data
         } else {
@@ -211,6 +236,25 @@ struct ItemDetailView: View {
             saleReceiptData = item.value(forKey: "saleReceipt") as? Data
         } else {
             saleReceiptData = nil
+        }
+
+        // ✅ NEW: Dates (safe if attributes don’t exist yet)
+        if item.entity.attributesByName["addedAt"] != nil,
+           let d = item.value(forKey: "addedAt") as? Date {
+            addedAt = d
+        } else {
+            addedAt = Date()
+        }
+
+        if item.entity.attributesByName["soldAt"] != nil {
+            soldAt = item.value(forKey: "soldAt") as? Date
+        } else {
+            soldAt = nil
+        }
+
+        // Keep toggle in sync with presence of soldAt, if available
+        if item.entity.attributesByName["soldAt"] != nil {
+            soldSwitch = (soldAt != nil)
         }
     }
 
@@ -227,6 +271,11 @@ struct ItemDetailView: View {
             item.setValue(purchaseReceiptData, forKey: "purchaseReceipt")
         }
 
+        // Dates
+        if item.entity.attributesByName["addedAt"] != nil {           // NEW
+            item.setValue(addedAt, forKey: "addedAt")
+        }
+
         // Sell (respect the switch)
         if soldSwitch {
             let sale = Double(salePriceText) ?? 0
@@ -236,12 +285,18 @@ struct ItemDetailView: View {
             if item.entity.attributesByName["saleReceipt"] != nil {
                 item.setValue(saleReceiptData, forKey: "saleReceipt")
             }
-            item.isSold      = (item.salePrice > 0) || item.isSold
+            if item.entity.attributesByName["soldAt"] != nil {        // NEW
+                item.setValue(soldAt ?? Date(), forKey: "soldAt")
+            }
+            item.isSold      = true                                   // NEW: mirror toggle
         } else {
             item.salePrice   = 0
             item.marketplace = nil
             if item.entity.attributesByName["saleReceipt"] != nil {
                 item.setValue(nil, forKey: "saleReceipt")
+            }
+            if item.entity.attributesByName["soldAt"] != nil {        // NEW
+                item.setValue(nil, forKey: "soldAt")
             }
             item.isSold      = false
         }

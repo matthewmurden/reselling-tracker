@@ -11,6 +11,9 @@ struct AddItemView: View {
     @State private var category = ""
     @State private var priceText = ""
 
+    // NEW: Date Added
+    @State private var addedAt: Date = Date()
+
     // Receipt picker
     @State private var showReceiptPicker = false
     @State private var receiptSelection: PhotosPickerItem?
@@ -23,6 +26,11 @@ struct AddItemView: View {
                     TextField("Name (e.g. Nike Dunks)", text: $name)
                     TextField("Brand (e.g. Nike)", text: $brand)
                     TextField("Category (e.g. Sneakers)", text: $category)
+                }
+
+                // NEW: Dates
+                Section("Dates") {
+                    DatePicker("Date Added", selection: $addedAt, displayedComponents: [.date])
                 }
 
                 Section("Purchase") {
@@ -93,8 +101,20 @@ struct AddItemView: View {
         item.brand = brand.isEmpty ? nil : brand
         item.category = category.isEmpty ? nil : category
         item.purchasePrice = Double(priceText) ?? 0
+
+        // Keep your existing timestamp (created-at)
         item.timestamp = Date()
-        item.purchaseReceipt = receiptData   // <-- store receipt image
+
+        // NEW: persist Date Added
+        if item.entity.attributesByName["addedAt"] != nil {
+            // If you have a generated accessor, replace with: item.addedAt = addedAt
+            item.setValue(addedAt, forKey: "addedAt")
+        }
+
+        // Receipt image
+        if item.entity.attributesByName["purchaseReceipt"] != nil {
+            item.setValue(receiptData, forKey: "purchaseReceipt")
+        }
 
         do {
             try viewContext.save()
