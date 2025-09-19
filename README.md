@@ -3,8 +3,9 @@ ResellAI – iOS Reselling Tracker
 ResellAI is a personal iOS app prototype built with SwiftUI that helps resellers track purchases, sales, receipts, and profitability. It combines Core Data persistence, dashboards, machine learning (OCR), barcode scanning, and Firebase authentication into one seamless experience.
 
 Features
+
 	•	Core Data persistence
-  •	Store products, purchase details, sales history, and receipts locally.
+    •	Store products, purchase details, sales history, and receipts locally.
 	•	Interactive dashboards (Swift Charts)
 	•	Monthly profit/loss bars
 	•	Sales vs. spend line charts
@@ -23,6 +24,7 @@ Features
 	•	Store safely in Core Data
 
 Tech Stack
+
 	•	Language & Frameworks: Swift, SwiftUI
 	•	Data: Core Data (with migrations)
 	•	Charts & Visualisation: Swift Charts
@@ -35,6 +37,7 @@ Tech Stack
 Learning Outcomes
 
 Building ResellAI gave me hands-on experience with:
+
 	•	Managing Core Data migrations and debugging schema validation issues
 	•	Working with iOS system frameworks like Vision and AVFoundation
 	•	Designing data-driven dashboards with Swift Charts
@@ -48,6 +51,7 @@ This is a prototype project built for portfolio and learning purposes.
 Not distributed on the App Store (runs locally via Xcode).
 
 Future Improvements
+
 	•	CloudKit/iCloud sync
 	•	Public product lookup from barcodes
 	•	Multi-user collaboration
